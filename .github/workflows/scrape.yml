@@ -36,10 +36,10 @@ jobs:
 
       # 4) Créer data/communes.json — heredoc (sûr) pour le JSON avec apostrophes
       - name: Ensure communes.json
-        shell: bash
-        run: |
-          mkdir -p data
-          cat > data/communes.json << 'JSON'
+  shell: bash
+  run: |
+    mkdir -p data
+    cat > data/communes.json << 'JSON'
 {
   "31620": ["Fronton","Bouloc","Castelnau-d'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
   "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],
