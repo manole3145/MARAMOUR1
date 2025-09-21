@@ -1,0 +1,26 @@
+name: Scrape annonces
+on:
+  schedule:
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci || npm i
+      - run: npx playwright install --with-deps chromium
+      - run: npm run scrape
+      - name: Commit data
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/annonces.json
+          git commit -m "Update annonces.json" || echo "No changes"
+          git push
