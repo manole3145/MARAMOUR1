@@ -1,5 +1,7 @@
-"scripts": {
-  "scrape": "node scraper.mjs",
-  "export": "node scripts/export.mjs",
-  "build": "node scraper.mjs && node scripts/export.mjs"
+{
+  "scripts": {
+    "scrape": "node scraper.mjs",
+    "export": "node scripts/export.mjs",
+    "build": "node scraper.mjs && node scripts/export.mjs"
+  }
 }
