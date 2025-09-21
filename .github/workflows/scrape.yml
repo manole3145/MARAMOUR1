@@ -1,4 +1,4 @@
-name: Scrape + Export annonces
+name: Scrape and Export
 
 on:
   workflow_dispatch:
@@ -12,18 +12,17 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      # Crée data/links.txt (1 URL par ligne)
       - name: Create links.txt
         shell: bash
         run: |
@@ -34,7 +33,6 @@ jobs:
           echo "https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200" >> data/links.txt
           echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" >> data/links.txt
 
-      # Crée data/communes.json via Python (évite les quotes foireuses)
       - name: Create communes.json
         shell: bash
         run: |
@@ -56,37 +54,32 @@ jobs:
       - name: Install Playwright package
         run: npm install playwright@^1.47.0
 
-      - name: Download Chromium for Playwright
+      - name: Download Chromium
         run: npx playwright install chromium
 
-      - name: Run build (scrape + export)
+      - name: Build (scrape + export)
         run: npm run build
 
-      # ✅ Commit + rebase-safe, on ajoute TOUT pour éviter "unstaged changes"
-      - name: Commit results (rebase-safe with retry)
+      - name: Commit and push (rebase with retry)
         env:
           BRANCH: ${{ github.ref_name }}
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Update annonces (bot)" || echo "No changes"
           for i in 1 2 3; do
-            echo "Attempt $i: rebase + push…"
             git -c rebase.autoStash=true pull --rebase origin "$BRANCH" || git rebase --abort
             if git push origin HEAD:"$BRANCH"; then
-              echo "Push OK"
               exit 0
-          fi
-          echo "Conflit ou course, on retente…"
-          sleep $((2*i))
+            fi
+            sleep $((2*i))
           done
-          echo "Échec après 3 tentatives. Dernier recours: force-with-lease (désactivé par défaut)."
           exit 1
 
-      - name: Upload CSV artifact
+      - name: Upload CSV
         uses: actions/upload-artifact@v4
         with:
           name: annonces-csv
