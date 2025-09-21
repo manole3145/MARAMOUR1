@@ -7,36 +7,40 @@
   <style>
     :root { --pri:#111; --acc:#0b5fff; --mut:#666; --bg:#f7f9fb; --br:#e6e8ec; }
     * { box-sizing: border-box; }
-    html, body { margin:0; padding:0; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--pri); }
-    header { padding: 16px 20px; background:#fff; border-bottom:1px solid var(--br); position: sticky; top: 0; z-index: 10; }
-    h1 { margin:0; font-size: 18px; }
-    .mut { color: var(--mut); font-size: 13px; }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
-    .controls { display:flex; gap:10px; flex-wrap:wrap; align-items: center; margin: 10px 0 16px; }
-    select, input { padding: 8px 10px; border:1px solid #d9dce2; border-radius: 10px; background:#fff; font-size:14px; }
-    a { color: var(--acc); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    html, body { margin:0; padding:0; background:var(--bg); color:var(--pri); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+    header { padding:16px 20px; background:#fff; border-bottom:1px solid var(--br); position:sticky; top:0; z-index:10; }
+    h1 { margin:0; font-size:18px; }
+    .mut { color:var(--mut); font-size:13px; }
+    .wrap { max-width:1200px; margin:0 auto; padding:18px; }
+    .controls { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0 16px; }
+    select, input { padding:8px 10px; border:1px solid #d9dce2; border-radius:10px; background:#fff; font-size:14px; }
+    a { color:var(--acc); text-decoration:none; }
+    a:hover { text-decoration:underline; }
     .btn-link { display:inline-block; padding:8px 10px; border:1px solid var(--br); border-radius:10px; background:#fff; font-size:13px; text-decoration:none; }
     .btn-link:hover { background:#f1f4f9; text-decoration:none; }
+    .tabs { display:flex; gap:8px; margin:8px 0 14px; }
+    .tab { padding:8px 12px; border:1px solid var(--br); border-radius:999px; background:#fff; font-size:13px; cursor:pointer; }
+    .tab.active { background:#eef4ff; border-color:#cddcff; color:#1945ff; }
     .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap:14px; }
-    .card { background:#fff; border:1px solid var(--br); border-radius:12px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
-    .title { font-weight: 600; margin: 4px 0; }
-    .price { font-weight: 700; }
-    .meta { color: var(--mut); font-size: 13px; }
-    .group { margin: 26px 0 10px; font-weight: 700; }
-    footer { padding: 30px 20px; color:#888; font-size:13px; text-align:center; }
-    .empty { padding: 22px; text-align:center; color:#777; border:1px dashed var(--br); border-radius:12px; background:#fff; }
-    @media (max-width: 480px) {
-      .controls { gap:8px; }
-      select, input { width: 100%; }
-    }
+    .card { background:#fff; border:1px solid var(--br); border-radius:12px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.05); display:flex; flex-direction:column; gap:6px; }
+    .title { font-weight:600; margin:2px 0; }
+    .price { font-weight:700; }
+    .meta { color:var(--mut); font-size:13px; }
+    .group { margin:26px 0 10px; font-weight:700; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:6px 10px; border:1px solid var(--br); border-radius:10px; background:#fff; font-size:13px; cursor:pointer; }
+    .btn:hover { background:#f1f4f9; }
+    .btn-danger { border-color:#ffd0d0; background:#fff5f5; }
+    .btn-danger:hover { background:#ffe9e9; }
+    footer { padding:30px 20px; color:#888; font-size:13px; text-align:center; }
+    .empty { padding:22px; text-align:center; color:#777; border:1px dashed var(--br); border-radius:12px; background:#fff; }
+    @media (max-width:480px){ .controls { gap:8px; } select, input { width:100%; } }
   </style>
 </head>
 <body>
   <header>
     <h1>Maisons à louer ≤ 1 200 € — 31620 / 31150 / 31790</h1>
-    <div class="mut">Agrégation multi-sites • filtres CP / commune • tri par date ou prix • recherche plein texte</div>
+    <div class="mut">Distances depuis Fenouillet • suppression/gestion sur 2 pages • filtres & tri</div>
   </header>
 
   <div class="wrap">
@@ -56,14 +60,19 @@
         <option value="date_desc">Tri : plus récentes</option>
         <option value="prix_asc">Tri : prix croissant</option>
         <option value="prix_desc">Tri : prix décroissant</option>
+        <option value="dist_asc">Tri : distance croissante</option>
       </select>
 
       <input id="searchInput" placeholder="Rechercher (mot-clé, commune, source)…" />
-
       <span id="countBadge" class="mut">0 annonce</span>
 
       <a class="btn-link" id="dlCsv" href="data/annonces.csv" download>CSV</a>
       <a class="btn-link" id="dlHtml" href="data/annonces_flat.html" target="_blank" rel="noopener">HTML</a>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabAnnonces">Annonces</button>
+      <button class="tab" id="tabRetirees">Retirées</button>
     </div>
 
     <div id="container"><div class="empty">Chargement des annonces…</div></div>
@@ -77,24 +86,97 @@
     const DATA_URL = "data/annonces.json";
     const COMMUNES_URL = "data/communes.json";
 
+    // --- coordonnées (approx centres-villes) pour distance ---
+    // Référence : Fenouillet (31)
+    const REF = { name: "Fenouillet", lat: 43.680, lon: 1.394 };
+
+    // Communes couvertes (ajoute si nécessaire)
+    const GEO = {
+      "Fenouillet": {lat:43.680, lon:1.394},
+      "Gagnac-sur-Garonne": {lat:43.707, lon:1.373},
+      "Gratentour": {lat:43.709, lon:1.416},
+      "Lespinasse": {lat:43.705, lon:1.402},
+      "Bruguières": {lat:43.737, lon:1.425},
+      "Fronton": {lat:43.836, lon:1.383},
+      "Bouloc": {lat:43.775, lon:1.413},
+      "Castelnau-d'Estrétefonds": {lat:43.790, lon:1.386},
+      "Cépet": {lat:43.783, lon:1.440},
+      "Saint-Rustice": {lat:43.808, lon:1.354},
+      "Villeneuve-lès-Bouloc": {lat:43.773, lon:1.385},
+      "Villaudric": {lat:43.840, lon:1.393},
+      "Vacquiers": {lat:43.791, lon:1.461},
+      "Saint-Jory": {lat:43.756, lon:1.360},
+      "Saint-Sauveur": {lat:43.756, lon:1.394}
+    };
+
     let annonces = [];
     let communesByCp = {};
+    let currentTab = 'active'; // 'active' (Annonces) | 'removed' (Retirées)
+
+    // localStorage keys
+    const LS_REMOVED = 'annonces_removed_urls_v1';
+
+    function loadRemovedSet() {
+      try {
+        const raw = localStorage.getItem(LS_REMOVED);
+        const arr = raw ? JSON.parse(raw) : [];
+        return new Set(arr);
+      } catch { return new Set(); }
+    }
+    function saveRemovedSet(set) {
+      localStorage.setItem(LS_REMOVED, JSON.stringify(Array.from(set)));
+    }
+
+    // --- distance (Haversine) en km ---
+    function toRad(d){ return d * Math.PI / 180; }
+    function haversine(lat1, lon1, lat2, lon2){
+      const R = 6371; // km
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+    function distanceFromFenouillet(commune){
+      if (!commune || !GEO[commune]) return null;
+      const p = GEO[commune];
+      return haversine(REF.lat, REF.lon, p.lat, p.lon);
+    }
+    function formatKm(km){
+      if (km == null) return "—";
+      return (Math.round(km * 10) / 10).toFixed(1) + " km";
+    }
 
     const byDate = (a,b) => (new Date(b.date_ts || 0)) - (new Date(a.date_ts || 0));
     const byPrixAsc = (a,b) => (a.prix_num ?? 9e9) - (b.prix_num ?? 9e9);
     const byPrixDesc = (a,b) => (b.prix_num ?? -1) - (a.prix_num ?? -1);
+    const byDistAsc = (a,b) => {
+      const da = distanceFromFenouillet(a.commune);
+      const db = distanceFromFenouillet(b.commune);
+      if (da==null && db==null) return 0;
+      if (da==null) return 1;
+      if (db==null) return -1;
+      return da - db;
+    };
 
-    function formatPrix(n){
-      return (n != null) ? new Intl.NumberFormat('fr-FR').format(n) + " €" : "—";
-    }
+    function formatPrix(n){ return (n != null) ? new Intl.NumberFormat('fr-FR').format(n) + " €" : "—"; }
 
-    function applyFilters(rows){
+    function getUrlKey(u){ try { return new URL(u, location.href).href.split('?')[0]; } catch { return u; } }
+
+    function applyFilters(rows, removedSet){
       const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
       const cp = document.getElementById('cpSelect').value;
       const commune = document.getElementById('communeSelect').value;
       const tri = document.getElementById('triSelect').value;
 
       let out = rows.slice();
+
+      // Vue Annonces: exclure retirées. Vue Retirées: ne montrer que retirées.
+      if (currentTab === 'active') {
+        out = out.filter(r => !removedSet.has(getUrlKey(r.url||'')));
+      } else {
+        out = out.filter(r => removedSet.has(getUrlKey(r.url||'')));
+      }
 
       if (cp) out = out.filter(r => r.cp_zone === cp);
       if (commune) out = out.filter(r => r.commune === commune);
@@ -106,6 +188,7 @@
 
       if (tri === 'prix_asc') out.sort(byPrixAsc);
       else if (tri === 'prix_desc') out.sort(byPrixDesc);
+      else if (tri === 'dist_asc') out.sort(byDistAsc);
       else out.sort(byDate);
 
       return out;
@@ -113,7 +196,8 @@
 
     function render(){
       const container = document.getElementById('container');
-      const filtered = applyFilters(annonces);
+      const removedSet = loadRemovedSet();
+      const filtered = applyFilters(annonces, removedSet);
 
       const byCommune = {};
       filtered.forEach(r => {
@@ -125,23 +209,54 @@
       Object.keys(byCommune).sort().forEach(c => {
         html += `<div class="group">${c}</div><div class="grid">`;
         byCommune[c].forEach(r => {
+          const d = distanceFromFenouillet(r.commune);
+          const urlKey = getUrlKey(r.url||'');
+          const isRemoved = removedSet.has(urlKey);
+
           html += `
-            <div class="card">
-              <div class="meta">${r.cp_zone ?? ''} • ${r.source ?? ''}</div>
+            <div class="card" data-urlkey="${urlKey}">
+              <div class="row meta">
+                <span>${r.cp_zone ?? ''} • ${r.source ?? ''}</span>
+                <span>•</span>
+                <span>Distance de Fenouillet : <b>${formatKm(d)}</b></span>
+              </div>
               <div class="title">${r.titre ?? 'Maison'}</div>
               <div class="price">${r.prix_num ? formatPrix(r.prix_num) : (r.prix ?? '')}</div>
               <div class="meta">${r.surface ?? ''} • ${r.pieces ?? ''}</div>
               <div class="meta">${r.date_humaine ?? r.date ?? ''}</div>
-              <div style="margin-top:8px;">
-                <a href="${r.url}" target="_blank" rel="noopener">Voir l’annonce</a>
+              <div class="row" style="margin-top:6px; justify-content:space-between;">
+                <a class="btn" href="${r.url}" target="_blank" rel="noopener">Voir l’annonce</a>
+                ${
+                  currentTab === 'active'
+                  ? `<button class="btn btn-danger" data-action="remove">Supprimer</button>`
+                  : `<button class="btn" data-action="restore">Restaurer</button>`
+                }
               </div>
             </div>`;
         });
         html += `</div>`;
       });
 
-      container.innerHTML = html || '<div class="empty">Aucune annonce ne correspond à vos filtres.</div>';
+      container.innerHTML = html || `<div class="empty">${currentTab==='active'?'Aucune annonce ne correspond à vos filtres.':'Aucune annonce retirée.'}</div>`;
       document.getElementById('countBadge').textContent = `${filtered.length} ${filtered.length>1?'annonces':'annonce'}`;
+
+      // Bind actions
+      container.querySelectorAll('[data-action="remove"]').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          const card = e.target.closest('.card');
+          const key = card?.dataset?.urlkey;
+          if (!key) return;
+          const s = loadRemovedSet(); s.add(key); saveRemovedSet(s); render();
+        });
+      });
+      container.querySelectorAll('[data-action="restore"]').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          const card = e.target.closest('.card');
+          const key = card?.dataset?.urlkey;
+          if (!key) return;
+          const s = loadRemovedSet(); s.delete(key); saveRemovedSet(s); render();
+        });
+      });
     }
 
     async function loadCommunes(cp){
@@ -156,6 +271,13 @@
         o.value = c; o.textContent = c;
         sel.appendChild(o);
       });
+    }
+
+    function setActiveTab(tab){
+      currentTab = tab;
+      document.getElementById('tabAnnonces').classList.toggle('active', tab==='active');
+      document.getElementById('tabRetirees').classList.toggle('active', tab==='removed');
+      render();
     }
 
     async function boot(){
@@ -176,6 +298,9 @@
         document.getElementById('communeSelect').addEventListener('change', render);
         document.getElementById('triSelect').addEventListener('change', render);
         document.getElementById('searchInput').addEventListener('input', render);
+
+        document.getElementById('tabAnnonces').addEventListener('click', ()=> setActiveTab('active'));
+        document.getElementById('tabRetirees').addEventListener('click', ()=> setActiveTab('removed'));
       } catch (e) {
         document.getElementById('container').innerHTML = '<div class="empty">Erreur de chargement des données.</div>';
         console.error(e);
