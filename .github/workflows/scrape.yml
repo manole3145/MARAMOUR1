@@ -1,9 +1,9 @@
-name: Scrape + Export annonces (links + EP par ville)
+name: Scrape + Export annonces
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */2 * * *"  # toutes les 2h
+    - cron: "0 */2 * * *"
 
 jobs:
   build:
@@ -12,51 +12,54 @@ jobs:
       contents: write
 
     steps:
-      # 1) Checkout (historique complet pour rebase)
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
 
-      # 2) Node 20
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      # 3) Créer data/links.txt — une ligne = une URL (pas de heredoc)
-      - name: Ensure links.txt
+      # Crée data/links.txt (1 URL par ligne, pas de heredoc)
+      - name: Create links.txt
         shell: bash
         run: |
           mkdir -p data
           : > data/links.txt
-          echo 'https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0' >> data/links.txt
-          echo 'https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200' >> data/links.txt
-          echo 'https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200' >> data/links.txt
-          echo 'https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200' >> data/links.txt
+          echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0" >> data/links.txt
+          echo "https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200" >> data/links.txt
+          echo "https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200" >> data/links.txt
+          echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" >> data/links.txt
 
-      # 4) Créer data/communes.json — heredoc (sûr) pour le JSON avec apostrophes
-      - name: Ensure communes.json
-  shell: bash
-  run: |
-    mkdir -p data
-    cat > data/communes.json << 'JSON'
-{
-  "31620": ["Fronton","Bouloc","Castelnau-dEstrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
-  "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],
-  "31790": ["Saint-Jory","Saint-Sauveur"]
-}
-JSON
+      # Crée data/communes.json via Python (zéro backslash)
+      - name: Create communes.json
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          os.makedirs("data", exist_ok=True)
+          d = {
+            "31620": ["Fronton","Bouloc","Castelnau-d'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
+            "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],
+            "31790": ["Saint-Jory","Saint-Sauveur"]
+          }
+          with open("data/communes.json","w",encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=2)
+          PY
 
-      # 5) Dépendances + Playwright
-      - run: npm ci || npm i
-      - run: npx playwright install --with-deps chromium
+      - name: Install deps
+        run: npm ci || npm i
 
-      # 6) Scrape + export (build = scrape && export)
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
       - name: Run build
         run: npm run build
 
-      # 7) Commit + push rebase-safe
-      - name: Commit data (rebase-safe)
+      - name: Commit results (rebase-safe)
         env:
           BRANCH: ${{ github.ref_name }}
         shell: bash
@@ -64,14 +67,11 @@ JSON
           set -e
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add data/annonces.json data/annonces.csv data/annonces_flat.html || true
-          git commit -m "Update annonces (bot)" || echo "No changes to commit"
-
+          git commit -m "Update annonces (bot)" || echo "No changes"
           git pull --rebase origin "$BRANCH" || git rebase --abort
           git push origin HEAD:"$BRANCH"
 
-      # 8) Artifact CSV
       - name: Upload CSV artifact
         uses: actions/upload-artifact@v4
         with:
