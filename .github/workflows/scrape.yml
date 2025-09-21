@@ -41,7 +41,7 @@ jobs:
     mkdir -p data
     cat > data/communes.json << 'JSON'
 {
-  "31620": ["Fronton","Bouloc","Castelnau-d'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
+  "31620": ["Fronton","Bouloc","Castelnau-dEstrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
   "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],
   "31790": ["Saint-Jory","Saint-Sauveur"]
 }
