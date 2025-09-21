@@ -32,7 +32,7 @@
   {
     "source": "Bien'ici",
     "url": "https://www.bienici.com/annonce/location/maubeuge/maison/4pieces/citya-immobilier-81526812300016-GES02770001-891?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla",
-    "titre": "Citya Art Home 17 Coup de de l’agence UNIQUEMENT SUR BIEN’ICI* Maison 4 pièces 71 m² 59600 Maubeuge (Montplaisir) 625 € par mois charges comprises",
+    "titre": "Citya Art Home 17 UNIQUEMENT SUR BIEN’ICI* Maison 4 pièces 71 m² 59600 Maubeuge (Montplaisir) 625 € par mois charges comprises",
     "prix": "625 €",
     "prix_num": 625,
     "date": null,
@@ -47,7 +47,7 @@
   {
     "source": "Bien'ici",
     "url": "https://www.bienici.com/annonce/location/maubeuge/maison/4pieces/ics-cit_CITYA_MAUBEUGE_loc-GES02770001-891?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla",
-    "titre": "CITYA ART HOME 17 UNIQUEMENT SUR BIEN’ICI* Maison 4 pièces 71 m² 59600 Maubeuge (Montplaisir) 625 € par mois charges comprises",
+    "titre": "CITYA ART HOME 17 Coup de de l’agence UNIQUEMENT SUR BIEN’ICI* Maison 4 pièces 71 m² 59600 Maubeuge (Montplaisir) 625 € par mois charges comprises",
     "prix": "625 €",
     "prix_num": 625,
     "date": null,
@@ -86,21 +86,6 @@
     "surface": "106 m²",
     "pieces": null,
     "commune": "Fenouillet",
-    "cp_zone": "31150",
-    "inside_budget": true
-  },
-  {
-    "source": "Bien'ici",
-    "url": "https://www.bienici.com/annonce/location/derval/maison/5pieces/immo-facile-59147902?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla&depuis-mise-en-avant=oui",
-    "titre": "PROXIMMO - Derval 8 Maison 5 pièces 82 m² 44590 Derval 765 € par mois charges comprises",
-    "prix": "765 €",
-    "prix_num": 765,
-    "date": null,
-    "date_humaine": null,
-    "date_ts": null,
-    "surface": "82 m²",
-    "pieces": null,
-    "commune": "Gratentour",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -266,21 +251,6 @@
     "surface": "131 m²",
     "pieces": null,
     "commune": "Fenouillet",
-    "cp_zone": "31150",
-    "inside_budget": true
-  },
-  {
-    "source": "Bien'ici",
-    "url": "https://www.bienici.com/annonce/location/valentigney/maison/6pieces/citya-immobilier-44228149900032-LMAI102804?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla&depuis-mise-en-avant=oui",
-    "titre": "Citya Vigneron Immobilier 9 VIDÉO Maison 6 pièces 98 m² 25700 Valentigney 1 200 € par mois charges comprises",
-    "prix": "1 200 €",
-    "prix_num": 1200,
-    "date": null,
-    "date_humaine": null,
-    "date_ts": null,
-    "surface": "98 m²",
-    "pieces": null,
-    "commune": "Gratentour",
     "cp_zone": "31150",
     "inside_budget": true
   }
