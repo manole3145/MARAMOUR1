@@ -68,29 +68,23 @@ jobs:
           BRANCH: ${{ github.ref_name }}
         shell: bash
         run: |
-         set -euo pipefail
-         git config user.name  "github-actions[bot]"
-         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-    # 1) Stage tout (évite "unstaged changes")
-    git add -A
-    git commit -m "Update annonces (bot)" || echo "No changes"
-
-    # 2) Rebase sur la branche distante + 3 tentatives de push en cas de course
-    for i in 1 2 3; do
-      echo "Attempt $i: rebase + push…"
-      # autoStash évite d'écraser des modifs locales non committées pendant le rebase
-      git -c rebase.autoStash=true pull --rebase origin "$BRANCH" || git rebase --abort
-      if git push origin HEAD:"$BRANCH"; then
-        echo "Push OK"
-        exit 0
-      fi
-      echo "Conflit ou course, on retente…"
-      sleep $((2*i))
-    done
-
-    echo "Échec après 3 tentatives. Dernier recours: force-with-lease (désactivé par défaut)."
-    exit 1
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Update annonces (bot)" || echo "No changes"
+          for i in 1 2 3; do
+            echo "Attempt $i: rebase + push…"
+            git -c rebase.autoStash=true pull --rebase origin "$BRANCH" || git rebase --abort
+            if git push origin HEAD:"$BRANCH"; then
+              echo "Push OK"
+              exit 0
+          fi
+          echo "Conflit ou course, on retente…"
+          sleep $((2*i))
+          done
+          echo "Échec après 3 tentatives. Dernier recours: force-with-lease (désactivé par défaut)."
+          exit 1
 
       - name: Upload CSV artifact
         uses: actions/upload-artifact@v4
