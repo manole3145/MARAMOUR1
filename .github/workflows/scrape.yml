@@ -71,7 +71,7 @@ jobs:
          set -euo pipefail
          git config user.name  "github-actions[bot]"
          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
- 
+
     # 1) Stage tout (évite "unstaged changes")
     git add -A
     git commit -m "Update annonces (bot)" || echo "No changes"
