@@ -31,7 +31,21 @@ function epLinksFromCommunes(){
   }
   return urls;
 }
-
+function getHost(u){ try { return new URL(u).hostname.replace(/^www\./,''); } catch { return ''; } }
+function fromEPQuery(url){ // EntreParticuliers: récupérer "q=<commune> <cp>"
+  try {
+    const u = new URL(url);
+    const q = u.searchParams.get('q') || '';
+    const m = q.match(/(.+)\s+(\d{5})$/);
+    return m ? { commune: m[1].trim(), cp: m[2] } : {};
+  } catch { return {}; }
+}
+function setLoc(r, {commune, cp} = {}){
+  if (commune && !r.commune) r.commune = commune;
+  if (cp && !r.cp_zone) r.cp_zone = cp;
+  return r;
+}
+function text(el){ return el?.innerText?.() ?? ''; }
 function toAbs(href, base){ try { return new URL(href, base).href; } catch { return href; } }
 function i(s){ const n=parseInt(s,10); return Number.isFinite(n)?n:null; }
 function price(t){ const m=(t||'').match(/\d[\d\s]*\s?€/); return m? i(m[0].replace(/[^\d]/g,'')) : null; }
@@ -54,29 +68,152 @@ async function exhaust(page){
 }
 
 async function extract(page, baseUrl){
+  const host = getHost(baseUrl);
+
+  if (host === 'bienici.com') {
+    // Bien’ici : le DOM est chargé en JS → cibler la liste et ses cartes
+    await page.waitForSelector('[data-testid="results-list"] article, [data-testid="result-list"] article', { timeout: 8000 }).catch(()=>{});
+    const cards = await page.$$('[data-testid="results-list"] article, [data-testid="result-list"] article, article');
+    const out = [];
+    for (const el of cards) {
+      try {
+        const a = await el.$('a[href]');
+        if (!a) continue;
+        const href = await a.getAttribute('href');
+        const url = toAbs(href, baseUrl);
+        const all = (await el.innerText()).replace(/\s+/g,' ').trim();
+
+        // Titre / prix / surface / pièces
+        const titre = normalize(all);
+        const prix_num = price(all);
+        const pieces = (all.match(/T\s?\d/i)?.[0]) || (all.match(/(\d)\s?pi[eè]ces?/i)?.[0]) || null;
+        const surf = (all.match(/(\d+)\s?m²/i)?.[0]) || null;
+
+        // Adresse : souvent présente dans une balise avec “/location/…” → on grignote la commune
+        let commune = null, cp = null;
+        const addrEl = await el.$('[data-testid="address"], [class*="Address"], [class*="address"]');
+        if (addrEl) {
+          const addr = (await addrEl.innerText()).trim();
+          // exemple: "Bouloc (31620)" ou "Fenouillet"
+          const m = addr.match(/(.+?)\s*\((\d{5})\)/) || addr.match(/^([\p{L}\-\'\s]+)$/u);
+          if (m) { commune = (m[1] || m[0]).trim(); cp = (m[2] || cp) || null; }
+        }
+
+        if (!isHouse(titre) || !okRooms(all) || !okBudget(prix_num)) continue;
+        out.push(setLoc({
+          url, titre, prix_num,
+          prix: prix_num ? new Intl.NumberFormat('fr-FR').format(prix_num)+' €' : null,
+          surface: surf, pieces,
+          source: host
+        }, {commune, cp}));
+      } catch {}
+    }
+    return out;
+  }
+
+  if (host === 'logic-immo.com') {
+    // Logic-Immo : listes en <article> avec contenu texte
+    await page.waitForSelector('article a[href*="/detail-"], article a[href]', { timeout: 8000 }).catch(()=>{});
+    const cards = await page.$$('article, li');
+    const out = [];
+    for (const el of cards) {
+      try {
+        const a = await el.$('a[href]');
+        if (!a) continue;
+        const href = await a.getAttribute('href');
+        const url = toAbs(href, baseUrl);
+        const all = (await el.innerText()).replace(/\s+/g,' ').trim();
+
+        const titre = normalize(all);
+        const prix_num = price(all);
+        const pieces = (all.match(/T\s?\d/i)?.[0]) || (all.match(/(\d)\s?pi[eè]ces?/i)?.[0]) || null;
+        const surf = (all.match(/(\d+)\s?m²/i)?.[0]) || null;
+
+        // Ville / CP souvent visibles en bas de carte
+        let commune = null, cp = null;
+        const locMatch = all.match(/([\p{L}\-\'\s]+)\s*\((\d{5})\)/u) || all.match(/à\s+([\p{L}\-\'\s]+)\b/u);
+        if (locMatch) {
+          commune = (locMatch[1] || '').trim();
+          const mcp = all.match(/\b(\d{5})\b/);
+          if (mcp) cp = mcp[1];
+        }
+
+        if (!isHouse(titre) || !okRooms(all) || !okBudget(prix_num)) continue;
+        out.push(setLoc({
+          url, titre, prix_num,
+          prix: prix_num ? new Intl.NumberFormat('fr-FR').format(prix_num)+' €' : null,
+          surface: surf, pieces,
+          source: host
+        }, {commune, cp}));
+      } catch {}
+    }
+    return out;
+  }
+
+  if (host === 'entreparticuliers.com') {
+    await page.waitForSelector('article a[href], li a[href], .annonce a[href]', { timeout: 8000 }).catch(()=>{});
+    const epHint = fromEPQuery(baseUrl); // {commune, cp} si construit via nos liens
+    const nodes = await page.$$('article, li, .annonce, .search-result, .result');
+    const out = [];
+    for (const el of nodes) {
+      try {
+        const a = await el.$('a[href]');
+        if (!a) continue;
+        const href = await a.getAttribute('href');
+        const url = toAbs(href, baseUrl);
+        const all = (await el.innerText()).replace(/\s+/g,' ').trim();
+
+        const titre = normalize(all);
+        const prix_num = price(all);
+        const pieces = (all.match(/T\s?\d/i)?.[0]) || (all.match(/(\d)\s?pi[eè]ces?/i)?.[0]) || null;
+        const surf = (all.match(/(\d+)\s?m²/i)?.[0]) || null;
+
+        // Ville / CP dans le texte, sinon fallback depuis l’URL q=<commune> <cp>
+        let commune = (all.match(/à\s+([\p{L}\-\'\s]+)\b/u)?.[1] || epHint.commune || '').trim() || null;
+        let cp = (all.match(/\b(\d{5})\b/)?.[1] || epHint.cp || null);
+
+        if (!isHouse(titre) || !okRooms(all) || !okBudget(prix_num)) continue;
+        out.push(setLoc({
+          url, titre, prix_num,
+          prix: prix_num ? new Intl.NumberFormat('fr-FR').format(prix_num)+' €' : null,
+          surface: surf, pieces,
+          source: host
+        }, {commune, cp}));
+      } catch {}
+    }
+    return out;
+  }
+
+  // Fallback générique (autres domaines)
   const cards = await page.$$('article, li, div');
   const out = [];
   for (const el of cards){
     try {
-      const a = await el.$('a'); if (!a) continue;
+      const a = await el.$('a[href]'); if (!a) continue;
       const href = await a.getAttribute('href'); if (!href) continue;
       const url = toAbs(href, baseUrl);
-      const txt = await el.innerText().catch(()=>'');
-      const titre = normalize(txt);
-      const prix_num = price(txt);
-      const surface = surf(txt);
-      const pieces = (txt.match(/T\s?\d/i)?.[0]) || null;
-      const date_humaine = (txt.match(/(Aujourd'hui|Hier|publiée? .*|\d{2}\/\d{2}\/\d{4})/i)?.[0]) || null;
+      const all = (await el.innerText()).replace(/\s+/g,' ').trim();
 
-      if (!isHouse(titre)) continue;
-      if (!okRooms(txt)) continue;
-      if (!okBudget(prix_num)) continue;
+      const titre = normalize(all);
+      const prix_num = price(all);
+      const pieces = (all.match(/T\s?\d/i)?.[0]) || (all.match(/(\d)\s?pi[eè]ces?/i)?.[0]) || null;
+      const surf = (all.match(/(\d+)\s?m²/i)?.[0]) || null;
 
-      out.push({ url, titre, prix_num, prix: prix_num? new Intl.NumberFormat('fr-FR').format(prix_num)+' €': null, surface, pieces, date_humaine, source: (new URL(baseUrl)).hostname });
+      let commune = (all.match(/à\s+([\p{L}\-\'\s]+)\b/u)?.[1] || '').trim() || null;
+      let cp = (all.match(/\b(\d{5})\b/)?.[1] || null);
+
+      if (!isHouse(titre) || !okRooms(all) || !okBudget(prix_num)) continue;
+      out.push(setLoc({
+        url, titre, prix_num,
+        prix: prix_num ? new Intl.NumberFormat('fr-FR').format(prix_num)+' €' : null,
+        surface: surf, pieces,
+        source: getHost(baseUrl)
+      }, {commune, cp}));
     } catch {}
   }
   return out;
 }
+
 
 function dedup(rows){
   const seen = new Set(); const out=[];
