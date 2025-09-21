@@ -34,6 +34,7 @@ jobs:
           echo "https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200" >> data/links.txt
           echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" >> data/links.txt
 
+
       # 4) Générer data/communes.json via Node (aucun backslash)
      - name: Ensure communes.json
   shell: bash
