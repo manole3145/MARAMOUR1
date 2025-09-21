@@ -52,6 +52,10 @@ jobs:
 
       - name: Install deps
         run: npm ci || npm i
+        
+      - name: Install Playwright package
+        run: npm install playwright@^1.47.0
+        
 
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
