@@ -1,14 +1,18 @@
-# Full-Links (MAJ) — Liens utilisateur intégrés + EntreParticuliers par ville
-- Liens ajoutés dans `data/links.txt` :
-- https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0
-- https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200
-- https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200
-- https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200
+# Pack Complet — Annonces maisons (31620 / 31150 / 31790)
 
-## Lancer
+- Multi-liens + EntreParticuliers par ville
+- Exports CSV + HTML
+- UI index.html : filtres, tri, distance depuis Fenouillet, suppression/restauration (localStorage)
+- Workflow GitHub prêt (printf links, Node communes, push rebase-safe)
+
+## Utilisation locale
 ```bash
-npm i
+npm ci || npm i
 npx playwright install --with-deps chromium
-npm run scrape
+npm run build   # scrape + export
+# Ouvrez index.html
 ```
-_Généré le 2025-09-21 08:16_
+
+Liens actuels → `data/links.txt` (tu peux éditer). Communes → `data/communes.json`.
+
+_Généré le 2025-09-21 10:50_
