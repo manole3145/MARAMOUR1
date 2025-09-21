@@ -23,31 +23,30 @@ jobs:
         with:
           node-version: "20"
 
-      # 3) Créer data/links.txt SANS heredoc ni backslashes
+      # 3) Créer data/links.txt
       - name: Ensure links.txt
         shell: bash
         run: |
           mkdir -p data
-          : > data/links.txt
-          echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0" >> data/links.txt
-          echo "https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200" >> data/links.txt
-          echo "https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200" >> data/links.txt
-          echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" >> data/links.txt
+          cat > data/links.txt << 'LINKS'
+https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0
+https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200
+https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200
+https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200
+LINKS
 
-
-      # 4) Générer data/communes.json via Node (aucun backslash)
-     - name: Ensure communes.json
-  shell: bash
-  run: |
-    mkdir -p data
-    cat > data/communes.json << 'JSON'
+      # 4) Créer data/communes.json
+      - name: Ensure communes.json
+        shell: bash
+        run: |
+          mkdir -p data
+          cat > data/communes.json << 'JSON'
 {
   "31620": ["Fronton","Bouloc","Castelnau-d'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
   "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],
   "31790": ["Saint-Jory","Saint-Sauveur"]
 }
 JSON
-
 
       # 5) Dépendances + Playwright
       - run: npm ci || npm i
@@ -57,7 +56,7 @@ JSON
       - name: Run build
         run: npm run build
 
-      # 7) Commit + push rebase-safe (aucun backslash)
+      # 7) Commit + push rebase-safe
       - name: Commit data (rebase-safe)
         env:
           BRANCH: ${{ github.ref_name }}
