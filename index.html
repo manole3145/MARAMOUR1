@@ -86,227 +86,135 @@
     const DATA_URL = "data/annonces.json";
     const COMMUNES_URL = "data/communes.json";
 
-    // --- coordonnées (approx centres-villes) pour distance ---
-    // Référence : Fenouillet (31)
     const REF = { name: "Fenouillet", lat: 43.680, lon: 1.394 };
-
-    // Communes couvertes (ajoute si nécessaire)
-    const GEO = {
-      "Fenouillet": {lat:43.680, lon:1.394},
-      "Gagnac-sur-Garonne": {lat:43.707, lon:1.373},
-      "Gratentour": {lat:43.709, lon:1.416},
-      "Lespinasse": {lat:43.705, lon:1.402},
-      "Bruguières": {lat:43.737, lon:1.425},
-      "Fronton": {lat:43.836, lon:1.383},
-      "Bouloc": {lat:43.775, lon:1.413},
-      "Castelnau-d'Estrétefonds": {lat:43.790, lon:1.386},
-      "Cépet": {lat:43.783, lon:1.440},
-      "Saint-Rustice": {lat:43.808, lon:1.354},
-      "Villeneuve-lès-Bouloc": {lat:43.773, lon:1.385},
-      "Villaudric": {lat:43.840, lon:1.393},
-      "Vacquiers": {lat:43.791, lon:1.461},
-      "Saint-Jory": {lat:43.756, lon:1.360},
-      "Saint-Sauveur": {lat:43.756, lon:1.394}
-    };
+    const GEO = {"Fenouillet":{"lat":43.68,"lon":1.394},"Gagnac-sur-Garonne":{"lat":43.707,"lon":1.373},"Gratentour":{"lat":43.709,"lon":1.416},"Lespinasse":{"lat":43.705,"lon":1.402},"Bruguières":{"lat":43.737,"lon":1.425},"Fronton":{"lat":43.836,"lon":1.383},"Bouloc":{"lat":43.775,"lon":1.413},"Castelnau-d'Estrétefonds":{"lat":43.79,"lon":1.386},"Cépet":{"lat":43.783,"lon":1.44},"Saint-Rustice":{"lat":43.808,"lon":1.354},"Villeneuve-lès-Bouloc":{"lat":43.773,"lon":1.385},"Villaudric":{"lat":43.84,"lon":1.393},"Vacquiers":{"lat":43.791,"lon":1.461},"Saint-Jory":{"lat":43.756,"lon":1.36},"Saint-Sauveur":{"lat":43.756,"lon":1.394}};
 
     let annonces = [];
     let communesByCp = {};
-    let currentTab = 'active'; // 'active' (Annonces) | 'removed' (Retirées)
-
-    // localStorage keys
+    let currentTab = 'active';
     const LS_REMOVED = 'annonces_removed_urls_v1';
 
-    function loadRemovedSet() {
-      try {
-        const raw = localStorage.getItem(LS_REMOVED);
-        const arr = raw ? JSON.parse(raw) : [];
-        return new Set(arr);
-      } catch { return new Set(); }
-    }
-    function saveRemovedSet(set) {
-      localStorage.setItem(LS_REMOVED, JSON.stringify(Array.from(set)));
-    }
+    function loadRemovedSet(){ try{ const raw=localStorage.getItem(LS_REMOVED); return new Set(raw?JSON.parse(raw):[]);}catch{return new Set()} }
+    function saveRemovedSet(s){ localStorage.setItem(LS_REMOVED, JSON.stringify(Array.from(s))); }
 
-    // --- distance (Haversine) en km ---
     function toRad(d){ return d * Math.PI / 180; }
     function haversine(lat1, lon1, lat2, lon2){
-      const R = 6371; // km
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+      const R=6371, dLat=toRad(lat2-lat1), dLon=toRad(lon2-lon1);
+      const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+      return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
     }
-    function distanceFromFenouillet(commune){
-      if (!commune || !GEO[commune]) return null;
-      const p = GEO[commune];
-      return haversine(REF.lat, REF.lon, p.lat, p.lon);
-    }
-    function formatKm(km){
-      if (km == null) return "—";
-      return (Math.round(km * 10) / 10).toFixed(1) + " km";
-    }
+    function distFenouillet(commune){ const p=GEO[commune]; return p? haversine(REF.lat, REF.lon, p.lat, p.lon) : null; }
+    function km(n){ return n==null ? "—" : (Math.round(n*10)/10).toFixed(1)+" km"; }
 
-    const byDate = (a,b) => (new Date(b.date_ts || 0)) - (new Date(a.date_ts || 0));
-    const byPrixAsc = (a,b) => (a.prix_num ?? 9e9) - (b.prix_num ?? 9e9);
-    const byPrixDesc = (a,b) => (b.prix_num ?? -1) - (a.prix_num ?? -1);
-    const byDistAsc = (a,b) => {
-      const da = distanceFromFenouillet(a.commune);
-      const db = distanceFromFenouillet(b.commune);
-      if (da==null && db==null) return 0;
-      if (da==null) return 1;
-      if (db==null) return -1;
-      return da - db;
+    const byDate=(a,b)=> new Date(b.date_ts||0) - new Date(a.date_ts||0);
+    const byPrixAsc=(a,b)=> (a.prix_num??9e9)-(b.prix_num??9e9);
+    const byPrixDesc=(a,b)=> (b.prix_num??-1)-(a.prix_num??-1);
+    const byDistAsc=(a,b)=>{
+      const da=distFenouillet(a.commune), db=distFenouillet(b.commune);
+      if(da==null&&db==null) return 0; if(da==null) return 1; if(db==null) return -1; return da-db;
     };
+    function price(n){ return n!=null? new Intl.NumberFormat('fr-FR').format(n)+' €' : '—'; }
+    function urlKey(u){ try{ return new URL(u, location.href).href.split('?')[0]; }catch{ return u } }
 
-    function formatPrix(n){ return (n != null) ? new Intl.NumberFormat('fr-FR').format(n) + " €" : "—"; }
+    function applyFilters(rows, removed){
+      const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+      const cp=document.getElementById('cpSelect').value;
+      const com=document.getElementById('communeSelect').value;
+      const tri=document.getElementById('triSelect').value;
+      let out=rows.slice();
 
-    function getUrlKey(u){ try { return new URL(u, location.href).href.split('?')[0]; } catch { return u; } }
+      if(currentTab==='active') out=out.filter(r=>!removed.has(urlKey(r.url||''))); else out=out.filter(r=>removed.has(urlKey(r.url||'')));
 
-    function applyFilters(rows, removedSet){
-      const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-      const cp = document.getElementById('cpSelect').value;
-      const commune = document.getElementById('communeSelect').value;
-      const tri = document.getElementById('triSelect').value;
+      if(cp) out=out.filter(r=>r.cp_zone===cp);
+      if(com) out=out.filter(r=>r.commune===com);
+      if(q) out=out.filter(r=>(r.titre||'').toLowerCase().includes(q)||(r.commune||'').toLowerCase().includes(q)||(r.source||'').toLowerCase().includes(q));
 
-      let out = rows.slice();
-
-      // Vue Annonces: exclure retirées. Vue Retirées: ne montrer que retirées.
-      if (currentTab === 'active') {
-        out = out.filter(r => !removedSet.has(getUrlKey(r.url||'')));
-      } else {
-        out = out.filter(r => removedSet.has(getUrlKey(r.url||'')));
-      }
-
-      if (cp) out = out.filter(r => r.cp_zone === cp);
-      if (commune) out = out.filter(r => r.commune === commune);
-      if (q) out = out.filter(r =>
-        (r.titre || '').toLowerCase().includes(q) ||
-        (r.commune || '').toLowerCase().includes(q) ||
-        (r.source || '').toLowerCase().includes(q)
-      );
-
-      if (tri === 'prix_asc') out.sort(byPrixAsc);
-      else if (tri === 'prix_desc') out.sort(byPrixDesc);
-      else if (tri === 'dist_asc') out.sort(byDistAsc);
+      if(tri==='prix_asc') out.sort(byPrixAsc);
+      else if(tri==='prix_desc') out.sort(byPrixDesc);
+      else if(tri==='dist_asc') out.sort(byDistAsc);
       else out.sort(byDate);
-
       return out;
     }
 
     function render(){
-      const container = document.getElementById('container');
-      const removedSet = loadRemovedSet();
-      const filtered = applyFilters(annonces, removedSet);
+      const ctn=document.getElementById('container');
+      const removed=loadRemovedSet();
+      const rows=applyFilters(annonces, removed);
+      const groups={}; rows.forEach(r=>{ const k=r.commune||'(Commune non précisée)'; (groups[k]=groups[k]||[]).push(r) });
 
-      const byCommune = {};
-      filtered.forEach(r => {
-        const key = r.commune || '(Commune non précisée)';
-        (byCommune[key] = byCommune[key] || []).push(r);
-      });
-
-      let html = '';
-      Object.keys(byCommune).sort().forEach(c => {
-        html += `<div class="group">${c}</div><div class="grid">`;
-        byCommune[c].forEach(r => {
-          const d = distanceFromFenouillet(r.commune);
-          const urlKey = getUrlKey(r.url||'');
-          const isRemoved = removedSet.has(urlKey);
-
-          html += `
-            <div class="card" data-urlkey="${urlKey}">
+      let html='';
+      Object.keys(groups).sort().forEach(comm=>{
+        html+=`<div class="group">${comm}</div><div class="grid">`;
+        groups[comm].forEach(r=>{
+          const d=distFenouillet(r.commune), key=urlKey(r.url||'');
+          html+=`
+            <div class="card" data-urlkey="${key}">
               <div class="row meta">
-                <span>${r.cp_zone ?? ''} • ${r.source ?? ''}</span>
+                <span>${r.cp_zone??''} • ${r.source??''}</span>
                 <span>•</span>
-                <span>Distance de Fenouillet : <b>${formatKm(d)}</b></span>
+                <span>Distance de Fenouillet : <b>${km(d)}</b></span>
               </div>
-              <div class="title">${r.titre ?? 'Maison'}</div>
-              <div class="price">${r.prix_num ? formatPrix(r.prix_num) : (r.prix ?? '')}</div>
-              <div class="meta">${r.surface ?? ''} • ${r.pieces ?? ''}</div>
-              <div class="meta">${r.date_humaine ?? r.date ?? ''}</div>
+              <div class="title">${r.titre??'Maison'}</div>
+              <div class="price">${r.prix_num?price(r.prix_num):(r.prix??'')}</div>
+              <div class="meta">${r.surface??''} • ${r.pieces??''}</div>
+              <div class="meta">${r.date_humaine??r.date??''}</div>
               <div class="row" style="margin-top:6px; justify-content:space-between;">
                 <a class="btn" href="${r.url}" target="_blank" rel="noopener">Voir l’annonce</a>
-                ${
-                  currentTab === 'active'
-                  ? `<button class="btn btn-danger" data-action="remove">Supprimer</button>`
-                  : `<button class="btn" data-action="restore">Restaurer</button>`
-                }
+                ${ currentTab==='active'
+                    ? `<button class="btn btn-danger" data-action="remove">Supprimer</button>`
+                    : `<button class="btn" data-action="restore">Restaurer</button>` }
               </div>
             </div>`;
         });
-        html += `</div>`;
+        html+='</div>';
       });
+      ctn.innerHTML = html || `<div class="empty">${currentTab==='active'?'Aucune annonce.':'Aucune annonce retirée.'}</div>`;
+      document.getElementById('countBadge').textContent = `${rows.length} ${rows.length>1?'annonces':'annonce'}`;
 
-      container.innerHTML = html || `<div class="empty">${currentTab==='active'?'Aucune annonce ne correspond à vos filtres.':'Aucune annonce retirée.'}</div>`;
-      document.getElementById('countBadge').textContent = `${filtered.length} ${filtered.length>1?'annonces':'annonce'}`;
-
-      // Bind actions
-      container.querySelectorAll('[data-action="remove"]').forEach(btn=>{
-        btn.addEventListener('click', (e)=>{
-          const card = e.target.closest('.card');
-          const key = card?.dataset?.urlkey;
-          if (!key) return;
-          const s = loadRemovedSet(); s.add(key); saveRemovedSet(s); render();
-        });
-      });
-      container.querySelectorAll('[data-action="restore"]').forEach(btn=>{
-        btn.addEventListener('click', (e)=>{
-          const card = e.target.closest('.card');
-          const key = card?.dataset?.urlkey;
-          if (!key) return;
-          const s = loadRemovedSet(); s.delete(key); saveRemovedSet(s); render();
-        });
-      });
+      ctn.querySelectorAll('[data-action="remove"]').forEach(b=>b.addEventListener('click',e=>{
+        const card=e.target.closest('.card'); const k=card?.dataset?.urlkey; if(!k) return;
+        const s=loadRemovedSet(); s.add(k); saveRemovedSet(s); render();
+      }));
+      ctn.querySelectorAll('[data-action="restore"]').forEach(b=>b.addEventListener('click',e=>{
+        const card=e.target.closest('.card'); const k=card?.dataset?.urlkey; if(!k) return;
+        const s=loadRemovedSet(); s.delete(k); saveRemovedSet(s); render();
+      }));
     }
 
     async function loadCommunes(cp){
-      const sel = document.getElementById('communeSelect');
-      sel.innerHTML = '<option value="">Toutes les communes</option>';
-      let list = [];
-      if (cp && communesByCp[cp]) list = communesByCp[cp];
-      else list = [...new Set(annonces.map(a => a.commune).filter(Boolean))].sort();
-
-      list.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c; o.textContent = c;
-        sel.appendChild(o);
-      });
+      const sel=document.getElementById('communeSelect');
+      sel.innerHTML='<option value="">Toutes les communes</option>';
+      let list=[];
+      if(cp && communesByCp[cp]) list=communesByCp[cp];
+      else list=[...new Set(annonces.map(a=>a.commune).filter(Boolean))].sort();
+      list.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
     }
 
-    function setActiveTab(tab){
-      currentTab = tab;
+    function setTab(tab){
+      currentTab=tab;
       document.getElementById('tabAnnonces').classList.toggle('active', tab==='active');
       document.getElementById('tabRetirees').classList.toggle('active', tab==='removed');
       render();
     }
 
     async function boot(){
-      try {
-        const comm = await fetch(COMMUNES_URL, { cache: 'no-store' });
-        communesByCp = await comm.json();
+      try{
+        communesByCp = await (await fetch(COMMUNES_URL,{cache:'no-store'})).json();
+        annonces = await (await fetch(DATA_URL,{cache:'no-store'})).json();
+        await loadCommunes(''); render();
 
-        const res = await fetch(DATA_URL, { cache: 'no-store' });
-        annonces = await res.json();
-
-        await loadCommunes('');
-        render();
-
-        document.getElementById('cpSelect').addEventListener('change', async (e) => {
-          await loadCommunes(e.target.value || '');
-          render();
-        });
+        document.getElementById('cpSelect').addEventListener('change', async e=>{ await loadCommunes(e.target.value||''); render(); });
         document.getElementById('communeSelect').addEventListener('change', render);
         document.getElementById('triSelect').addEventListener('change', render);
         document.getElementById('searchInput').addEventListener('input', render);
 
-        document.getElementById('tabAnnonces').addEventListener('click', ()=> setActiveTab('active'));
-        document.getElementById('tabRetirees').addEventListener('click', ()=> setActiveTab('removed'));
-      } catch (e) {
-        document.getElementById('container').innerHTML = '<div class="empty">Erreur de chargement des données.</div>';
+        document.getElementById('tabAnnonces').addEventListener('click', ()=>setTab('active'));
+        document.getElementById('tabRetirees').addEventListener('click', ()=>setTab('removed'));
+      }catch(e){
+        document.getElementById('container').innerHTML='<div class="empty">Erreur de chargement des données.</div>';
         console.error(e);
       }
     }
-
     boot();
   </script>
 </body>
