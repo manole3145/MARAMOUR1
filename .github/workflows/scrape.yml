@@ -23,7 +23,6 @@ jobs:
         with:
           node-version: "20"
 
-      # Crée data/links.txt (1 URL par ligne, pas de heredoc)
       - name: Create links.txt
         shell: bash
         run: |
@@ -34,7 +33,6 @@ jobs:
           echo "https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200" >> data/links.txt
           echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" >> data/links.txt
 
-      # Crée data/communes.json via Python (zéro backslash)
       - name: Create communes.json
         shell: bash
         run: |
@@ -53,7 +51,13 @@ jobs:
       - name: Install deps
         run: npm ci || npm i
 
-      - name: Run build
+      - name: Install Playwright package
+        run: npm install playwright@^1.47.0
+
+      - name: Download Chromium for Playwright
+        run: npx playwright install chromium
+
+      - name: Run build (scrape + export)
         run: npm run build
 
       - name: Commit results (rebase-safe)
