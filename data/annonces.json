@@ -1,0 +1,44 @@
+[
+  {
+    "commune": "Saint-Jory (31790)",
+    "cp_zone": "31790",
+    "pieces": "T4",
+    "surface": "89 m²",
+    "prix": "1 025 € CC",
+    "prix_num": 1025,
+    "date": "2025-09-20T12:18:00Z",
+    "date_humaine": "publiée hier",
+    "date_ts": 1695212280000,
+    "url": "https://www.leboncoin.fr/cl/locations/cp_saint-jory_31790",
+    "source": "LeBonCoin",
+    "inside_budget": true
+  },
+  {
+    "commune": "Fronton (31620)",
+    "cp_zone": "31620",
+    "pieces": "T4",
+    "surface": "99 m²",
+    "prix": "1 090 € CC",
+    "prix_num": 1090,
+    "date": null,
+    "date_humaine": "date non précisée",
+    "date_ts": null,
+    "url": "https://www.seloger.com/immobilier/locations/immo-fronton-31/bien-maison/type-4-pieces/",
+    "source": "SeLoger",
+    "inside_budget": true
+  },
+  {
+    "commune": "Saint-Sauveur (31790)",
+    "cp_zone": "31790",
+    "pieces": "T4",
+    "surface": "90 m²",
+    "prix": "950 € CC",
+    "prix_num": 950,
+    "date": "2025-09-15T00:00:00Z",
+    "date_humaine": "Disponible 15/09/2025",
+    "date_ts": 1694736000000,
+    "url": "https://immobilier.lefigaro.fr/annonces/immobilier-location-maison-saint%2Bsauveur%2B31790.html",
+    "source": "Figaro Immo",
+    "inside_budget": true
+  }
+]
