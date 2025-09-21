@@ -12,16 +12,18 @@ jobs:
       contents: write
 
     steps:
+      # 1) Checkout avec historique complet (pour rebase)
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
 
+      # 2) Node.js 20
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # Crée data/links.txt sans heredoc (YAML-safe)
+      # 3) Crée data/links.txt via printf (YAML-safe)
       - name: Ensure links.txt (tes liens)
         shell: bash
         run: |
@@ -33,25 +35,20 @@ jobs:
             "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" \
             > data/links.txt
 
-      # Crée data/communes.json sans heredoc (YAML-safe)
-      - name: Ensure communes.json (fallback)
+      # 4) Génère data/communes.json via Node (pas de heredoc / quoting compliqué)
+      - name: Ensure communes.json (fallback via Node)
         shell: bash
         run: |
-          if [ ! -f data/communes.json ]; then
-            mkdir -p data
-            printf '%s\n' \
-'{' \
-'  "31620": ["Fronton","Bouloc","Castelnau-d'\''Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],' \
-'  "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],' \
-'  "31790": ["Saint-Jory","Saint-Sauveur"]' \
-'}' > data/communes.json
-          fi
+          node -e "const fs=require('fs');fs.mkdirSync('data',{recursive:true});const p='data/communes.json';if(!fs.existsSync(p)){const d={'31620':['Fronton','Bouloc','Castelnau-d\\'Estrétefonds','Cépet','Saint-Rustice','Villeneuve-lès-Bouloc','Villaudric','Vacquiers'],'31150':['Fenouillet','Gagnac-sur-Garonne','Gratentour','Lespinasse','Bruguières'],'31790':['Saint-Jory','Saint-Sauveur']};fs.writeFileSync(p,JSON.stringify(d,null,2),'utf8');}"
 
+      # 5) Dépendances + Playwright
       - run: npm ci || npm i
       - run: npx playwright install --with-deps chromium
+
+      # 6) Scrape + export (JSON, CSV, HTML)
       - run: npm run build
 
-      # Commit + push rebase-safe
+      # 7) Commit + push rebase-safe (pas de force)
       - name: Commit data (rebase-safe)
         shell: bash
         run: |
@@ -65,6 +62,7 @@ jobs:
           git pull --rebase origin "$BRANCH" || git rebase --abort
           git push origin HEAD:"$BRANCH"
 
+      # 8) Artifact CSV (téléchargeable depuis l’onglet Actions)
       - name: Upload CSV artifact
         uses: actions/upload-artifact@v4
         with:
