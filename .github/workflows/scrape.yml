@@ -12,32 +12,32 @@ jobs:
       contents: write
 
     steps:
-      # 1) Checkout avec historique complet (rebase possible)
+      # 1) Checkout avec historique complet (pour rebase)
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
 
-      # 2) Node.js
+      # 2) Node.js 20
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 3) Assurer data/links.txt (tes liens)
+      # 3) Créer data/links.txt via printf (évite les soucis YAML/heredoc)
       - name: Ensure links.txt (tes liens)
-  shell: bash
-  run: |
-    mkdir -p data
-    cat > data/links.txt <<'LINKS'
-https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0
-https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200
-https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200
-https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200
-LINKS
+        shell: bash
+        run: |
+          mkdir -p data
+          printf "%s\n" \
+            "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0" \
+            "https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200" \
+            "https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200" \
+            "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" \
+            > data/links.txt
 
-
-      # (Optionnel) Assurer data/communes.json s’il manque
-      - name: Ensure communes.json (par défaut)
+      # (Optionnel) Assurer communes.json si absent
+      - name: Ensure communes.json (fallback)
+        shell: bash
         run: |
           if [ ! -f data/communes.json ]; then
             mkdir -p data
@@ -50,15 +50,16 @@ LINKS
 JSON
           fi
 
-      # 4) Dépendances & Playwright
+      # 4) Dépendances + Playwright
       - run: npm ci || npm i
       - run: npx playwright install --with-deps chromium
 
       # 5) Scrape + export (JSON, CSV, HTML)
       - run: npm run build
 
-      # 6) Commit + rebase-safe push
+      # 6) Commit + push rebase-safe (pas de force)
       - name: Commit data (rebase-safe)
+        shell: bash
         run: |
           BRANCH="${GITHUB_REF_NAME:-main}"
           git config user.name  "github-actions[bot]"
@@ -70,7 +71,7 @@ JSON
           git pull --rebase origin "$BRANCH" || git rebase --abort
           git push origin HEAD:"$BRANCH"
 
-      # 7) Artifact CSV (facile à télécharger depuis l’onglet Actions)
+      # 7) Artifact CSV (téléchargeable depuis l’onglet Actions)
       - name: Upload CSV artifact
         uses: actions/upload-artifact@v4
         with:
