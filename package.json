@@ -1,14 +1,7 @@
 {
-  "name": "maisons-aggregator",
-  "version": "3.0.0",
-  "type": "module",
-  "license": "MIT",
   "scripts": {
     "scrape": "node scraper.mjs",
     "export": "node scripts/export.mjs",
     "build": "node scraper.mjs && node scripts/export.mjs"
-  },
-  "dependencies": {
-    "playwright": "^1.47.2"
   }
 }
