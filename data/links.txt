@@ -1,4 +1,6 @@
-https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0
+https://www.leboncoin.fr/recherche?category=10&real_estate_type=1&rooms=4-max&price=min-1200&locations=31620
+https://www.leboncoin.fr/recherche?category=10&real_estate_type=1&rooms=4-max&price=min-1200&locations=31150
+https://www.leboncoin.fr/recherche?category=10&real_estate_type=1&rooms=4-max&price=min-1200&locations=31790
+https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200
 https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200
 https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200
-https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200
