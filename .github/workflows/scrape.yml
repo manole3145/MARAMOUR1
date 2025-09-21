@@ -38,14 +38,7 @@ jobs:
       - name: Ensure communes.json
         shell: bash
         run: |
-          mkdir -p data
-          cat > data/communes.json << 'JSON'
-{
-  "31620": ["Fronton","Bouloc","Castelnau-d'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
-  "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],
-  "31790": ["Saint-Jory","Saint-Sauveur"]
-}
-JSON
+          node -e 'const fs=require("fs");fs.mkdirSync("data",{recursive:true});const p="data/communes.json";if(!fs.existsSync(p)){const d={"31620":["Fronton","Bouloc","Castelnau-d\'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],"31150":["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],"31790":["Saint-Jory","Saint-Sauveur"]};fs.writeFileSync(p,JSON.stringify(d,null,2),"utf8");}'
 
       # 5) Dépendances + Playwright
       - run: npm ci || npm i
