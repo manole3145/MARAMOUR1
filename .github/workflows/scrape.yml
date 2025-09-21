@@ -23,30 +23,22 @@ jobs:
         with:
           node-version: "20"
 
-      # 3) Crée data/links.txt (sans backslashes)
+      # 3) Créer data/links.txt SANS heredoc ni backslashes
       - name: Ensure links.txt
         shell: bash
         run: |
           mkdir -p data
-          cat > data/links.txt << 'LINKS'
-https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0
-https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200
-https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200
-https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200
-LINKS
+          : > data/links.txt
+          echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200&camera=10_1.1490573_43.7260169_0_0" >> data/links.txt
+          echo "https://www.logic-immo.com/classified-search?distributionTypes=Rent&estateTypes=House&locations=POCOFR1841,POCOFR1795,POCOFR1845&numberOfRoomsMin=4&priceMax=1200" >> data/links.txt
+          echo "https://www.entreparticuliers.com/annonces-immobilieres/location/maison/bouloc-31620?piecesNbMin=4&prixMax=1200" >> data/links.txt
+          echo "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" >> data/links.txt
 
-      # 4) Crée data/communes.json (sans backslashes)
+      # 4) Générer data/communes.json via Node (aucun backslash)
       - name: Ensure communes.json
         shell: bash
         run: |
-          mkdir -p data
-          cat > data/communes.json << 'JSON'
-{
-  "31620": ["Fronton","Bouloc","Castelnau-d'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
-  "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],
-  "31790": ["Saint-Jory","Saint-Sauveur"]
-}
-JSON
+          node -e 'const fs=require("fs");fs.mkdirSync("data",{recursive:true});const p="data/communes.json";if(!fs.existsSync(p)){const d={"31620":["Fronton","Bouloc","Castelnau-d\'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],"31150":["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],"31790":["Saint-Jory","Saint-Sauveur"]};fs.writeFileSync(p,JSON.stringify(d,null,2),"utf8");}'
 
       # 5) Dépendances + Playwright
       - run: npm ci || npm i
