@@ -12,18 +12,16 @@ jobs:
       contents: write
 
     steps:
-      # 1) Checkout avec historique complet (pour rebase)
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
 
-      # 2) Node.js 20
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 3) Créer data/links.txt via printf (évite les soucis YAML/heredoc)
+      # Crée data/links.txt sans heredoc (YAML-safe)
       - name: Ensure links.txt (tes liens)
         shell: bash
         run: |
@@ -35,29 +33,25 @@ jobs:
             "https://www.bienici.com/recherche/location/31620,31150,31790/maisonvilla/4-pieces-et-plus?prix-max=1200" \
             > data/links.txt
 
-      # (Optionnel) Assurer communes.json si absent
+      # Crée data/communes.json sans heredoc (YAML-safe)
       - name: Ensure communes.json (fallback)
         shell: bash
         run: |
           if [ ! -f data/communes.json ]; then
             mkdir -p data
-            cat > data/communes.json <<'JSON'
-{
-  "31620": ["Fronton","Bouloc","Castelnau-d'Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],
-  "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],
-  "31790": ["Saint-Jory","Saint-Sauveur"]
-}
-JSON
+            printf '%s\n' \
+'{' \
+'  "31620": ["Fronton","Bouloc","Castelnau-d'\''Estrétefonds","Cépet","Saint-Rustice","Villeneuve-lès-Bouloc","Villaudric","Vacquiers"],' \
+'  "31150": ["Fenouillet","Gagnac-sur-Garonne","Gratentour","Lespinasse","Bruguières"],' \
+'  "31790": ["Saint-Jory","Saint-Sauveur"]' \
+'}' > data/communes.json
           fi
 
-      # 4) Dépendances + Playwright
       - run: npm ci || npm i
       - run: npx playwright install --with-deps chromium
-
-      # 5) Scrape + export (JSON, CSV, HTML)
       - run: npm run build
 
-      # 6) Commit + push rebase-safe (pas de force)
+      # Commit + push rebase-safe
       - name: Commit data (rebase-safe)
         shell: bash
         run: |
@@ -71,7 +65,6 @@ JSON
           git pull --rebase origin "$BRANCH" || git rebase --abort
           git push origin HEAD:"$BRANCH"
 
-      # 7) Artifact CSV (téléchargeable depuis l’onglet Actions)
       - name: Upload CSV artifact
         uses: actions/upload-artifact@v4
         with:
