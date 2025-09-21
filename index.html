@@ -1,1 +1,188 @@
-<!DOCTYPE html><meta charset='utf-8'><title>Full-Links (MAJ)</title><p>Liens utilisateur intégrés. Exécuter <code>npm run scrape</code>. Résultats: <code>data/annonces.json</code>.</p>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Maisons ≤ 1 200 € — 31620 / 31150 / 31790</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root { --pri:#111; --acc:#0b5fff; --mut:#666; --bg:#f7f9fb; --br:#e6e8ec; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--pri); }
+    header { padding: 16px 20px; background:#fff; border-bottom:1px solid var(--br); position: sticky; top: 0; z-index: 10; }
+    h1 { margin:0; font-size: 18px; }
+    .mut { color: var(--mut); font-size: 13px; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
+    .controls { display:flex; gap:10px; flex-wrap:wrap; align-items: center; margin: 10px 0 16px; }
+    select, input { padding: 8px 10px; border:1px solid #d9dce2; border-radius: 10px; background:#fff; font-size:14px; }
+    a { color: var(--acc); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .btn-link { display:inline-block; padding:8px 10px; border:1px solid var(--br); border-radius:10px; background:#fff; font-size:13px; text-decoration:none; }
+    .btn-link:hover { background:#f1f4f9; text-decoration:none; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap:14px; }
+    .card { background:#fff; border:1px solid var(--br); border-radius:12px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+    .title { font-weight: 600; margin: 4px 0; }
+    .price { font-weight: 700; }
+    .meta { color: var(--mut); font-size: 13px; }
+    .group { margin: 26px 0 10px; font-weight: 700; }
+    footer { padding: 30px 20px; color:#888; font-size:13px; text-align:center; }
+    .empty { padding: 22px; text-align:center; color:#777; border:1px dashed var(--br); border-radius:12px; background:#fff; }
+    @media (max-width: 480px) {
+      .controls { gap:8px; }
+      select, input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Maisons à louer ≤ 1 200 € — 31620 / 31150 / 31790</h1>
+    <div class="mut">Agrégation multi-sites • filtres CP / commune • tri par date ou prix • recherche plein texte</div>
+  </header>
+
+  <div class="wrap">
+    <div class="controls">
+      <select id="cpSelect" title="Filtrer par code postal">
+        <option value="">Tous les CP</option>
+        <option>31620</option>
+        <option>31150</option>
+        <option>31790</option>
+      </select>
+
+      <select id="communeSelect" title="Filtrer par commune">
+        <option value="">Toutes les communes</option>
+      </select>
+
+      <select id="triSelect" title="Tri">
+        <option value="date_desc">Tri : plus récentes</option>
+        <option value="prix_asc">Tri : prix croissant</option>
+        <option value="prix_desc">Tri : prix décroissant</option>
+      </select>
+
+      <input id="searchInput" placeholder="Rechercher (mot-clé, commune, source)…" />
+
+      <span id="countBadge" class="mut">0 annonce</span>
+
+      <a class="btn-link" id="dlCsv" href="data/annonces.csv" download>CSV</a>
+      <a class="btn-link" id="dlHtml" href="data/annonces_flat.html" target="_blank" rel="noopener">HTML</a>
+    </div>
+
+    <div id="container"><div class="empty">Chargement des annonces…</div></div>
+  </div>
+
+  <footer>
+    Données issues de portails publics. Respectez les CGU des sites sources. Ce site n’est affilié à aucun d’entre eux.
+  </footer>
+
+  <script>
+    const DATA_URL = "data/annonces.json";
+    const COMMUNES_URL = "data/communes.json";
+
+    let annonces = [];
+    let communesByCp = {};
+
+    const byDate = (a,b) => (new Date(b.date_ts || 0)) - (new Date(a.date_ts || 0));
+    const byPrixAsc = (a,b) => (a.prix_num ?? 9e9) - (b.prix_num ?? 9e9);
+    const byPrixDesc = (a,b) => (b.prix_num ?? -1) - (a.prix_num ?? -1);
+
+    function formatPrix(n){
+      return (n != null) ? new Intl.NumberFormat('fr-FR').format(n) + " €" : "—";
+    }
+
+    function applyFilters(rows){
+      const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const cp = document.getElementById('cpSelect').value;
+      const commune = document.getElementById('communeSelect').value;
+      const tri = document.getElementById('triSelect').value;
+
+      let out = rows.slice();
+
+      if (cp) out = out.filter(r => r.cp_zone === cp);
+      if (commune) out = out.filter(r => r.commune === commune);
+      if (q) out = out.filter(r =>
+        (r.titre || '').toLowerCase().includes(q) ||
+        (r.commune || '').toLowerCase().includes(q) ||
+        (r.source || '').toLowerCase().includes(q)
+      );
+
+      if (tri === 'prix_asc') out.sort(byPrixAsc);
+      else if (tri === 'prix_desc') out.sort(byPrixDesc);
+      else out.sort(byDate);
+
+      return out;
+    }
+
+    function render(){
+      const container = document.getElementById('container');
+      const filtered = applyFilters(annonces);
+
+      const byCommune = {};
+      filtered.forEach(r => {
+        const key = r.commune || '(Commune non précisée)';
+        (byCommune[key] = byCommune[key] || []).push(r);
+      });
+
+      let html = '';
+      Object.keys(byCommune).sort().forEach(c => {
+        html += `<div class="group">${c}</div><div class="grid">`;
+        byCommune[c].forEach(r => {
+          html += `
+            <div class="card">
+              <div class="meta">${r.cp_zone ?? ''} • ${r.source ?? ''}</div>
+              <div class="title">${r.titre ?? 'Maison'}</div>
+              <div class="price">${r.prix_num ? formatPrix(r.prix_num) : (r.prix ?? '')}</div>
+              <div class="meta">${r.surface ?? ''} • ${r.pieces ?? ''}</div>
+              <div class="meta">${r.date_humaine ?? r.date ?? ''}</div>
+              <div style="margin-top:8px;">
+                <a href="${r.url}" target="_blank" rel="noopener">Voir l’annonce</a>
+              </div>
+            </div>`;
+        });
+        html += `</div>`;
+      });
+
+      container.innerHTML = html || '<div class="empty">Aucune annonce ne correspond à vos filtres.</div>';
+      document.getElementById('countBadge').textContent = `${filtered.length} ${filtered.length>1?'annonces':'annonce'}`;
+    }
+
+    async function loadCommunes(cp){
+      const sel = document.getElementById('communeSelect');
+      sel.innerHTML = '<option value="">Toutes les communes</option>';
+      let list = [];
+      if (cp && communesByCp[cp]) list = communesByCp[cp];
+      else list = [...new Set(annonces.map(a => a.commune).filter(Boolean))].sort();
+
+      list.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        sel.appendChild(o);
+      });
+    }
+
+    async function boot(){
+      try {
+        const comm = await fetch(COMMUNES_URL, { cache: 'no-store' });
+        communesByCp = await comm.json();
+
+        const res = await fetch(DATA_URL, { cache: 'no-store' });
+        annonces = await res.json();
+
+        await loadCommunes('');
+        render();
+
+        document.getElementById('cpSelect').addEventListener('change', async (e) => {
+          await loadCommunes(e.target.value || '');
+          render();
+        });
+        document.getElementById('communeSelect').addEventListener('change', render);
+        document.getElementById('triSelect').addEventListener('change', render);
+        document.getElementById('searchInput').addEventListener('input', render);
+      } catch (e) {
+        document.getElementById('container').innerHTML = '<div class="empty">Erreur de chargement des données.</div>';
+        console.error(e);
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>
