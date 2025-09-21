@@ -12,13 +12,20 @@ const HEADERS = {
 };
 
 const CP_COMMUNES = JSON.parse(await fs.readFile('data/communes.json','utf8'));
-const LINKS_RAW = (await fs.readFile('data/links.txt','utf8')).split(/\r?\n/).map(l=>l.trim()).filter(l => l && !l.startsWith('#'));
+
+let LINKS_RAW = [];
+try {
+  const raw = await fs.readFile('data/links.txt','utf8');
+  LINKS_RAW = raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l && !l.startsWith('#'));
+} catch(e) {
+  console.warn('⚠️ links.txt manquant — je continue avec EP par ville uniquement.');
+}
 
 function epLinksFromCommunes(){
   const urls = [];
   for (const [cp, comms] of Object.entries(CP_COMMUNES)){
     for (const commune of comms){
-      const q = encodeURIComponent(commune + ' ' + cp + ' maison');
+      const q = encodeURIComponent(`${commune} ${cp} maison`);
       urls.push(`https://www.entreparticuliers.com/annonces-immobilieres/location/maison?q=${q}&piecesNbMin=${MIN_ROOMS}&prixMax=${MAX_BUDGET}`);
     }
   }
@@ -26,14 +33,14 @@ function epLinksFromCommunes(){
 }
 
 function toAbs(href, base){ try { return new URL(href, base).href; } catch { return href; } }
-function parseIntSafe(s){ const n = parseInt(s,10); return Number.isFinite(n)?n:null; }
-function parsePrice(txt){ const m=(txt||'').match(/\d[\d\s]*\s?€/); return m ? parseIntSafe(m[0].replace(/[^\d]/g,'')) : null; }
-function findRooms(txt){ const m = (txt||'').match(/T\s?(\d)/i) || (txt||'').match(/(\d)\s?pi[eè]ce/i); return m ? parseIntSafe(m[1]) : null; }
-function findSurface(txt){ const m = (txt||'').match(/(\d+)\s?m²/i); return m ? m[0] : null; }
+function i(s){ const n=parseInt(s,10); return Number.isFinite(n)?n:null; }
+function price(t){ const m=(t||'').match(/\d[\d\s]*\s?€/); return m? i(m[0].replace(/[^\d]/g,'')) : null; }
+function rooms(t){ const m=(t||'').match(/T\s?(\d)/i) || (t||'').match(/(\d)\s?pi[eè]ce/i); return m? i(m[1]) : null; }
+function surf(t){ const m=(t||'').match(/(\d+)\s?m²/i); return m? m[0] : null; }
 function normalize(t){ return (t||'').replace(/\s+/g,' ').trim().slice(0,200); }
-function isHouse(txt){ const s=(txt||'').toLowerCase(); return s.includes('maison')||s.includes('villa')||s.includes('pavillon'); }
-function okRooms(txt){ const r = findRooms(txt); return r==null ? true : (r >= MIN_ROOMS); }
-function okBudget(p){ return p==null ? true : p <= MAX_BUDGET; }
+function isHouse(t){ const s=(t||'').toLowerCase(); return s.includes('maison')||s.includes('villa')||s.includes('pavillon'); }
+function okRooms(t){ const r=rooms(t); return r==null? true : r>=MIN_ROOMS; }
+function okBudget(p){ return p==null? true : p<=MAX_BUDGET; }
 
 async function exhaust(page){
   for (let i=0;i<PAGES_MAX;i++){
@@ -56,8 +63,8 @@ async function extract(page, baseUrl){
       const url = toAbs(href, baseUrl);
       const txt = await el.innerText().catch(()=>'');
       const titre = normalize(txt);
-      const prix_num = parsePrice(txt);
-      const surface = findSurface(txt);
+      const prix_num = price(txt);
+      const surface = surf(txt);
       const pieces = (txt.match(/T\s?\d/i)?.[0]) || null;
       const date_humaine = (txt.match(/(Aujourd'hui|Hier|publiée? .*|\d{2}\/\d{2}\/\d{4})/i)?.[0]) || null;
 
