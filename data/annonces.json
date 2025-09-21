@@ -10,14 +10,14 @@
     "date_ts": null,
     "surface": "58 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
   {
     "source": "Bien'ici",
     "url": "https://www.bienici.com/annonce/location/sancoins/maison/4pieces/citya-immobilier-5059-GES44220001-304?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla",
-    "titre": "Citya Jacques Cœur 29 Coup de de l’agence UNIQUEMENT SUR BIEN’ICI* Maison 4 pièces 86 m² 18600 Sancoins 600 € par mois charges comprises",
+    "titre": "Citya Jacques Cœur 29 UNIQUEMENT SUR BIEN’ICI* Maison 4 pièces 86 m² 18600 Sancoins 600 € par mois charges comprises",
     "prix": "600 €",
     "prix_num": 600,
     "date": null,
@@ -25,7 +25,7 @@
     "date_ts": null,
     "surface": "86 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -40,7 +40,7 @@
     "date_ts": null,
     "surface": "71 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -55,7 +55,7 @@
     "date_ts": null,
     "surface": "71 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -70,7 +70,7 @@
     "date_ts": null,
     "surface": "62 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -85,7 +85,7 @@
     "date_ts": null,
     "surface": "106 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -100,29 +100,29 @@
     "date_ts": null,
     "surface": "72 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
   {
     "source": "Bien'ici",
-    "url": "https://www.bienici.com/annonce/location/avanton/maison/5pieces/adapt-immo-8600516440?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla&depuis-mise-en-avant=oui",
-    "titre": "10 VIDÉO Maison 5 pièces 113 m² 86170 Avanton 860 € par mois charges comprises",
-    "prix": "860 €",
-    "prix_num": 860,
+    "url": "https://www.bienici.com/annonce/location/wattrelos/maison/3pieces/hektor-altiorepatrimoine59-126?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla&depuis-mise-en-avant=oui",
+    "titre": "Altiore Patrimoine 8 VIDÉO Maison 3 pièces 83 m² 59150 Wattrelos (Union - Sapin Vert - Mousserie) 865 € par mois charges comprises",
+    "prix": "865 €",
+    "prix_num": 865,
     "date": null,
     "date_humaine": null,
     "date_ts": null,
-    "surface": "113 m²",
+    "surface": "83 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
   {
     "source": "Bien'ici",
     "url": "https://www.bienici.com/annonce/location/commelle-vernay/maison/4pieces/citya-immobilier-38792244600035-GES25100020-671?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla",
-    "titre": "Citya Oriol 13 UNIQUEMENT SUR BIEN’ICI* Maison 4 pièces 80 m² 42120 Commelle-Vernay 890 € par mois charges comprises",
+    "titre": "Citya Oriol 13 Coup de de l’agence UNIQUEMENT SUR BIEN’ICI* Maison 4 pièces 80 m² 42120 Commelle-Vernay 890 € par mois charges comprises",
     "prix": "890 €",
     "prix_num": 890,
     "date": null,
@@ -130,7 +130,7 @@
     "date_ts": null,
     "surface": "80 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -145,7 +145,7 @@
     "date_ts": null,
     "surface": "90 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -160,22 +160,7 @@
     "date_ts": null,
     "surface": "75 m²",
     "pieces": null,
-    "commune": "Fenouillet",
-    "cp_zone": "31150",
-    "inside_budget": true
-  },
-  {
-    "source": "Bien'ici",
-    "url": "https://www.bienici.com/annonce/location/wasquehal/maison/3pieces/ag590653-204796112?q=%2Frecherche%2Flocation%2Ffrance%2Fmaisonvilla&depuis-mise-en-avant=oui",
-    "titre": "9 Maison 3 pièces 77 m² 59290 Wasquehal (Centre-ville - Pharos - Site Saint-Nicolas) 938 € par mois charges comprises",
-    "prix": "938 €",
-    "prix_num": 938,
-    "date": null,
-    "date_humaine": null,
-    "date_ts": null,
-    "surface": "77 m²",
-    "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -190,7 +175,7 @@
     "date_ts": null,
     "surface": "85 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -205,7 +190,7 @@
     "date_ts": null,
     "surface": "173 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -220,7 +205,7 @@
     "date_ts": null,
     "surface": "130 m²",
     "pieces": "t\n2",
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -235,7 +220,7 @@
     "date_ts": null,
     "surface": "99 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   },
@@ -250,7 +235,7 @@
     "date_ts": null,
     "surface": "131 m²",
     "pieces": null,
-    "commune": "Fenouillet",
+    "commune": "Gagnac-sur-Garonne",
     "cp_zone": "31150",
     "inside_budget": true
   }
