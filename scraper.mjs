@@ -1,4 +1,4 @@
-// scraper_sites.mjs - version avec extracteurs par site  
+// scraper_sites_logs.mjs - extracteurs par site + logs détaillés
 
 import fs from "fs";
 import playwright from "playwright";
@@ -48,7 +48,7 @@ async function autoScroll(page) {
 // --- Extractors ---
 
 async function extractBienici(page,url){
-  const cards = await page.$$('div.resultListItem');
+  const cards = await page.$$('.resultsList .resultListItem');
   const rows = [];
   for(const el of cards){
     try{
@@ -60,11 +60,12 @@ async function extractBienici(page,url){
       rows.push({url, titre, prix_num, pieces, source:'bienici'});
     }catch(e){}
   }
+  console.log(`[Bienici] ${rows.length} annonces extraites`);
   return rows;
 }
 
 async function extractLogicImmo(page,url){
-  const cards = await page.$$('div.card-list article');
+  const cards = await page.$$('article[data-test-id="ad-card"]');
   const rows = [];
   for(const el of cards){
     try{
@@ -76,22 +77,24 @@ async function extractLogicImmo(page,url){
       rows.push({url, titre, prix_num, pieces, source:'logicimmo'});
     }catch(e){}
   }
+  console.log(`[Logic-Immo] ${rows.length} annonces extraites`);
   return rows;
 }
 
 async function extractLeboncoin(page,url){
-  const cards = await page.$$('li[data-test-id="adCard"]');
+  const cards = await page.$$('li[data-qa-id="aditem_container"]');
   const rows = [];
   for(const el of cards){
     try{
-      const titre = (await el.$eval('p[data-test-id="ad-title"]', n=>n.innerText)).trim();
-      const prix_txt = await el.$eval('span[data-test-id="ad-price"]', n=>n.innerText).catch(()=>null);
+      const titre = (await el.$eval('p[data-qa-id="aditem_title"]', n=>n.innerText)).trim();
+      const prix_txt = await el.$eval('span[data-qa-id="aditem_price"]', n=>n.innerText).catch(()=>null);
       const prix_num = price(prix_txt||"");
-      const pieces_txt = await el.$eval('p[data-test-id="ad-attributes"]', n=>n.innerText).catch(()=>null);
+      const pieces_txt = await el.$eval('p[data-qa-id="aditem_tags"]', n=>n.innerText).catch(()=>null);
       const pieces = pieces_txt?.match(/(\d+)\s?pi[eè]c/i)?.[1] || null;
       rows.push({url, titre, prix_num, pieces, source:'leboncoin'});
     }catch(e){}
   }
+  console.log(`[Leboncoin] ${rows.length} annonces extraites`);
   return rows;
 }
 
@@ -108,6 +111,7 @@ async function extractPAP(page,url){
       rows.push({url, titre, prix_num, pieces, source:'pap'});
     }catch(e){}
   }
+  console.log(`[PAP] ${rows.length} annonces extraites`);
   return rows;
 }
 
@@ -124,6 +128,7 @@ async function extractEP(page,url){
       rows.push({url, titre, prix_num, pieces, source:'entreparticuliers'});
     }catch(e){}
   }
+  console.log(`[EntreParticuliers] ${rows.length} annonces extraites`);
   return rows;
 }
 
@@ -135,6 +140,7 @@ async function extract(page,url){
   if(host.includes("leboncoin.fr")) return extractLeboncoin(page,url);
   if(host.includes("pap.fr")) return extractPAP(page,url);
   if(host.includes("entreparticuliers.com")) return extractEP(page,url);
+  console.log(`[WARN] Pas d'extracteur spécifique pour ${host}`);
   return [];
 }
 
@@ -153,7 +159,6 @@ async function main(){
       await page.waitForTimeout(1200);
 
       const rows = await extract(page, url);
-      console.log("👉", rows.length, "annonces trouvées sur", url);
       all.push(...rows);
 
       // Pagination (si bouton suivant dispo)
@@ -165,7 +170,8 @@ async function main(){
         await page.waitForTimeout(2000);
         await autoScroll(page);
         const moreRows = await extract(page, url);
-        console.log("👉 +", moreRows.length, "annonces supplémentaires");
+        if(moreRows.length === 0){ hasNext = false; break; }
+        console.log(`+ ${moreRows.length} annonces supplémentaires (${url})`);
         all.push(...moreRows);
       }
     } catch(e) {
