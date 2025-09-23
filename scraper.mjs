@@ -12,7 +12,23 @@ function okRooms(txt) { return /([4-7]\s?pi[eè]ce|T[4-7])/i.test(txt || ""); }
 function okBudget(p) { return p == null ? true : p <= MAX_BUDGET; }
 function getHost(u){ try { return new URL(u).hostname.replace(/^www\./,''); } catch { return ''; } }
 function setLoc(r, { commune, cp } = {}) { if (commune && !r.commune) r.commune = commune; if (cp && !r.cp_zone) r.cp_zone = cp; return r; }
-function dedup(rows){ const seen=new Set(); return rows.filter(r=>{const k=(r.url||'').split('?')[0]; if(seen.has(k)) return false; seen.add(k); return true;}); }
+function dedup(rows){
+  const seen = new Set();
+  return rows.filter(r => {
+    const titreNorm = (r.titre||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,20);
+    const key = [
+      (r.commune||'').toLowerCase(),
+      r.prix_num||'',
+      r.surface||'',
+      r.pieces||'',
+      titreNorm
+    ].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+); }
 
 async function extractBienici(page, baseUrl){
   await page.waitForSelector("[data-testid='results-list'] article, [data-testid='result-list'] article", {timeout: 8000}).catch(()=>{});
@@ -34,7 +50,7 @@ async function extractBienici(page, baseUrl){
         const m = addr.match(/(.+?)\s*\((\d{5})\)/) || addr.match(/^([A-Za-zÀ-ÖØ-öø-ÿ \-']+)$/);
         if(m){ commune=(m[1]||m[0]).trim(); cp = m[2] || cp; }
       }
-      if(!isHouse(titre)||!okRooms(all)||!okBudget(prix_num)) continue;
+      // Filtrage désactivé: garder toutes les annonces
       out.push(setLoc({url,titre,prix_num,prix:prix_num?new Intl.NumberFormat("fr-FR").format(prix_num)+" €":null,surface:surf,pieces,source:getHost(baseUrl)}, {commune,cp}));
     }catch{}
   }
@@ -57,7 +73,7 @@ async function extractLogicImmo(page, baseUrl){
       let commune=null, cp=null;
       const locMatch = all.match(/([A-Za-zÀ-ÖØ-öø-ÿ \-']+)\s*\((\d{5})\)/) || all.match(/à\s+([A-Za-zÀ-ÖØ-öø-ÿ \-']+)\b/);
       if(locMatch){ commune=(locMatch[1]||"").trim(); const mcp = all.match(/\b(\d{5})\b/); if(mcp) cp=mcp[1]; }
-      if(!isHouse(titre)||!okRooms(all)||!okBudget(prix_num)) continue;
+      // Filtrage désactivé: garder toutes les annonces
       out.push(setLoc({url,titre,prix_num,prix:prix_num?new Intl.NumberFormat("fr-FR").format(prix_num)+" €":null,surface:surf,pieces,source:getHost(baseUrl)}, {commune,cp}));
     }catch{}
   }
@@ -83,7 +99,7 @@ async function extractLeboncoin(page, baseUrl){
       let commune=null, cp=null;
       const loc = all.match(/([A-Za-zÀ-ÖØ-öø-ÿ \-']+)\s*\((\d{5})\)/);
       if(loc){ commune=loc[1].trim(); cp=loc[2]; }
-      if(!isHouse(titre)||!okRooms(all)||!okBudget(prix_num)) continue;
+      // Filtrage désactivé: garder toutes les annonces
       out.push(setLoc({url,titre,prix_num,prix:prix_num?new Intl.NumberFormat("fr-FR").format(prix_num)+" €":null,surface:surf,pieces,source:getHost(baseUrl)}, {commune,cp}));
     }catch{}
   }
@@ -106,7 +122,7 @@ async function extractPAP(page, baseUrl){
       let commune=null, cp=null;
       const locMatch = all.match(/([A-Za-zÀ-ÖØ-öø-ÿ \-']+)\s*\((\d{5})\)/) || all.match(/à\s+([A-Za-zÀ-ÖØ-öø-ÿ \-']+)/);
       if(locMatch){ commune=(locMatch[1]||"").trim(); const mcp=all.match(/\b(\d{5})\b/); if(mcp) cp=mcp[1]; }
-      if(!isHouse(titre)||!okRooms(all)||!okBudget(prix_num)) continue;
+      // Filtrage désactivé: garder toutes les annonces
       out.push(setLoc({url,titre,prix_num,prix:prix_num?new Intl.NumberFormat("fr-FR").format(prix_num)+" €":null,surface:surf,pieces,source:getHost(baseUrl)}, {commune,cp}));
     }catch{}
   }
@@ -129,7 +145,7 @@ async function extractAVendreALouer(page, baseUrl){
       let commune=null, cp=null;
       const locMatch = all.match(/([A-Za-zÀ-ÖØ-öø-ÿ \-']+)\s*\((\d{5})\)/) || all.match(/à\s+([A-Za-zÀ-ÖØ-öø-ÿ \-']+)/);
       if(locMatch){ commune=(locMatch[1]||"").trim(); const mcp=all.match(/\b(\d{5})\b/); if(mcp) cp=mcp[1]; }
-      if(!isHouse(titre)||!okRooms(all)||!okBudget(prix_num)) continue;
+      // Filtrage désactivé: garder toutes les annonces
       out.push(setLoc({url,titre,prix_num,prix:prix_num?new Intl.NumberFormat("fr-FR").format(prix_num)+" €":null,surface:surf,pieces,source:getHost(baseUrl)}, {commune,cp}));
     }catch{}
   }
@@ -151,7 +167,7 @@ async function extractEntreParticuliers(page, baseUrl){
       const surf = all.match(/(\d+)\s?m²/i)?.[0] || null;
       let commune = (all.match(/à\s+([A-Za-zÀ-ÖØ-öø-ÿ \-']+)\b/)?.[1]||"").trim() || null;
       let cp = all.match(/\b(\d{5})\b/)?.[1] || null;
-      if(!isHouse(titre)||!okRooms(all)||!okBudget(prix_num)) continue;
+      // Filtrage désactivé: garder toutes les annonces
       out.push(setLoc({url,titre,prix_num,prix:prix_num?new Intl.NumberFormat("fr-FR").format(prix_num)+" €":null,surface:surf,pieces,source:getHost(baseUrl)}, {commune,cp}));
     }catch{}
   }
@@ -172,7 +188,7 @@ async function extractGeneric(page, baseUrl){
       const surf = all.match(/(\d+)\s?m²/i)?.[0] || null;
       let commune=(all.match(/à\s+([A-Za-zÀ-ÖØ-öø-ÿ \-']+)\b/)?.[1]||"").trim()||null;
       let cp=all.match(/\b(\d{5})\b/)?.[1]||null;
-      if(!isHouse(titre)||!okRooms(all)||!okBudget(prix_num)) continue;
+      // Filtrage désactivé: garder toutes les annonces
       out.push(setLoc({url,titre,prix_num,prix:prix_num?new Intl.NumberFormat("fr-FR").format(prix_num)+" €":null,surface:surf,pieces,source:getHost(baseUrl)}, {commune,cp}));
     }catch{}
   }
@@ -188,6 +204,24 @@ async function extract(page, url){
   if(host==="avendrealouer.fr") return extractAVendreALouer(page, url);
   if(host==="entreparticuliers.com") return extractEntreParticuliers(page, url);
   return extractGeneric(page, url);
+}
+
+async function autoScroll(page) {
+  await page.evaluate(async () => {
+    await new Promise(resolve => {
+      let totalHeight = 0;
+      const distance = 400;
+      const timer = setInterval(() => {
+        const scrollHeight = document.body.scrollHeight;
+        window.scrollBy(0, distance);
+        totalHeight += distance;
+        if(totalHeight >= scrollHeight){
+          clearInterval(timer);
+          resolve();
+        }
+      }, 300);
+    });
+  });
 }
 
 async function main(){
@@ -214,13 +248,17 @@ async function main(){
       await page.mouse.wheel(0, 2000);
       await page.waitForTimeout(1200);
       const rows = await extract(page, url);
-      all.push(...rows);
+console.log("👉 Annonces brutes page 1:", rows.length);
+all.push(...rows);
+
     }catch(e){
       console.error("Erreur", url, e.message);
     }
   }
 
-  all = dedup(all).filter(r=> okBudget(r.prix_num));
+  console.log('🔎 Total brut avant dédup:', all.length);
+  all = dedup(all);
+  console.log('✅ Total après dédup:', all.length);
   fs.writeFileSync("data/annonces.json", JSON.stringify(all,null,2), "utf-8");
   console.log("Total annonces:", all.length);
   await browser.close();
