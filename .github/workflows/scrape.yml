@@ -61,9 +61,9 @@ jobs:
         run: npm run build
 
       - name: Commit and push (force overwrite)
-        env:
-        BRANCH: ${{ github.ref_name }}
-        shell: bash
+         env:
+          BRANCH: ${{ github.ref_name }}
+          shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
