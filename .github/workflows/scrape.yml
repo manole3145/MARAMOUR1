@@ -61,9 +61,9 @@ jobs:
         run: npm run build
 
       - name: Commit and push (force overwrite)
-         env:
+        env:
           BRANCH: ${{ github.ref_name }}
-          shell: bash
+        shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -73,6 +73,7 @@ jobs:
           git add -A
           git commit -m "Update annonces (bot)" || echo "No changes"
           git push origin HEAD:$BRANCH --force
+
 
       - name: Upload CSV
         uses: actions/upload-artifact@v4
