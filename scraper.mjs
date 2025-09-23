@@ -1,4 +1,4 @@
-// scraper_sites.mjs - version avec extracteurs par site
+// scraper_sites.mjs - version avec extracteurs par site  
 
 import fs from "fs";
 import playwright from "playwright";
