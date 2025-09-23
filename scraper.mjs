@@ -1,9 +1,7 @@
-// scraper.mjs - version corrigée avec logs, scroll complet, pagination et dédup multi-plateformes
+// scraper_sites.mjs - version avec extracteurs par site
 
 import fs from "fs";
 import playwright from "playwright";
-
-const MAX_BUDGET = 1200;
 
 // --- Utils ---
 
@@ -47,22 +45,97 @@ async function autoScroll(page) {
   });
 }
 
-// --- Extraction générique simplifiée ---
-// (à adapter par site si nécessaire)
-async function extract(page, url) {
-  const host = new URL(url).hostname.replace(/^www\./,'');
-  const cards = await page.$$("article, li, .search-result, .listing-item");
+// --- Extractors ---
+
+async function extractBienici(page,url){
+  const cards = await page.$$('div.resultListItem');
   const rows = [];
-  for (const el of cards) {
-    try {
-      const txt = (await el.innerText()) || "";
-      const titre = txt.split("\n")[0].trim();
-      const prix_num = price(txt);
-      const pieces = (txt.match(/T(\d+)/i) || txt.match(/(\d+)\s?pi[eè]c/i))?.[1] || null;
-      rows.push({url, titre, prix_num, pieces, source: host});
-    } catch(e){}
+  for(const el of cards){
+    try{
+      const titre = (await el.$eval('h2', n=>n.innerText)).trim();
+      const prix_txt = await el.$eval('.price', n=>n.innerText).catch(()=>null);
+      const prix_num = price(prix_txt||"");
+      const pieces_txt = await el.$eval('.typology', n=>n.innerText).catch(()=>null);
+      const pieces = pieces_txt?.match(/T(\d+)/i)?.[1] || null;
+      rows.push({url, titre, prix_num, pieces, source:'bienici'});
+    }catch(e){}
   }
   return rows;
+}
+
+async function extractLogicImmo(page,url){
+  const cards = await page.$$('div.card-list article');
+  const rows = [];
+  for(const el of cards){
+    try{
+      const titre = (await el.$eval('h2', n=>n.innerText)).trim();
+      const prix_txt = await el.$eval('.price', n=>n.innerText).catch(()=>null);
+      const prix_num = price(prix_txt||"");
+      const pieces_txt = await el.$eval('.itemRooms', n=>n.innerText).catch(()=>null);
+      const pieces = pieces_txt?.match(/(\d+)/)?.[1] || null;
+      rows.push({url, titre, prix_num, pieces, source:'logicimmo'});
+    }catch(e){}
+  }
+  return rows;
+}
+
+async function extractLeboncoin(page,url){
+  const cards = await page.$$('li[data-test-id="adCard"]');
+  const rows = [];
+  for(const el of cards){
+    try{
+      const titre = (await el.$eval('p[data-test-id="ad-title"]', n=>n.innerText)).trim();
+      const prix_txt = await el.$eval('span[data-test-id="ad-price"]', n=>n.innerText).catch(()=>null);
+      const prix_num = price(prix_txt||"");
+      const pieces_txt = await el.$eval('p[data-test-id="ad-attributes"]', n=>n.innerText).catch(()=>null);
+      const pieces = pieces_txt?.match(/(\d+)\s?pi[eè]c/i)?.[1] || null;
+      rows.push({url, titre, prix_num, pieces, source:'leboncoin'});
+    }catch(e){}
+  }
+  return rows;
+}
+
+async function extractPAP(page,url){
+  const cards = await page.$$('div.search-list-item');
+  const rows = [];
+  for(const el of cards){
+    try{
+      const titre = (await el.$eval('h2', n=>n.innerText)).trim();
+      const prix_txt = await el.$eval('.item-price', n=>n.innerText).catch(()=>null);
+      const prix_num = price(prix_txt||"");
+      const pieces_txt = await el.$eval('.item-tags', n=>n.innerText).catch(()=>null);
+      const pieces = pieces_txt?.match(/(\d+)/)?.[1] || null;
+      rows.push({url, titre, prix_num, pieces, source:'pap'});
+    }catch(e){}
+  }
+  return rows;
+}
+
+async function extractEP(page,url){
+  const cards = await page.$$('article.annonce');
+  const rows = [];
+  for(const el of cards){
+    try{
+      const titre = (await el.$eval('h2', n=>n.innerText)).trim();
+      const prix_txt = await el.$eval('.prix', n=>n.innerText).catch(()=>null);
+      const prix_num = price(prix_txt||"");
+      const pieces_txt = await el.$eval('.caracteristiques', n=>n.innerText).catch(()=>null);
+      const pieces = pieces_txt?.match(/(\d+)/)?.[1] || null;
+      rows.push({url, titre, prix_num, pieces, source:'entreparticuliers'});
+    }catch(e){}
+  }
+  return rows;
+}
+
+// --- Dispatcher ---
+async function extract(page,url){
+  const host = new URL(url).hostname.replace(/^www\./,'');
+  if(host.includes("bienici.com")) return extractBienici(page,url);
+  if(host.includes("logic-immo.com")) return extractLogicImmo(page,url);
+  if(host.includes("leboncoin.fr")) return extractLeboncoin(page,url);
+  if(host.includes("pap.fr")) return extractPAP(page,url);
+  if(host.includes("entreparticuliers.com")) return extractEP(page,url);
+  return [];
 }
 
 // --- Main ---
@@ -80,10 +153,10 @@ async function main(){
       await page.waitForTimeout(1200);
 
       const rows = await extract(page, url);
-      console.log("👉 Annonces brutes page 1:", rows.length);
+      console.log("👉", rows.length, "annonces trouvées sur", url);
       all.push(...rows);
 
-      // Pagination basique
+      // Pagination (si bouton suivant dispo)
       let hasNext = true;
       while (hasNext) {
         const nextBtn = await page.$("a[rel=next], .pagination-next, button[aria-label=Suivant]");
@@ -92,7 +165,7 @@ async function main(){
         await page.waitForTimeout(2000);
         await autoScroll(page);
         const moreRows = await extract(page, url);
-        console.log("👉 Annonces supplémentaires:", moreRows.length);
+        console.log("👉 +", moreRows.length, "annonces supplémentaires");
         all.push(...moreRows);
       }
     } catch(e) {
